@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline'" />
+  <link rel="stylesheet" href="css/all.min.css" />
+  <link rel="stylesheet" href="css/materialize.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script type="text/javascript" src="js/materialize.min.js"></script>
+  <title>OAuth Launcher</title>
+</head>
+
+<body>
+  <div class="launch-container">
+    <div class="launch-row">
+      <div class="launch-item">
+        <button id='download' class="btn btn-primary download-btn">Download partypalace launcher</button>
+        <button id='launch' class="btn btn-primary launch-btn" disabled>Launch partypalace</button>
+      </div>
+    </div>
+    <script>
+      const path = require("path");
+      const fs = require("fs");
+      const os = require("os");
+      const {
+        ipcRenderer
+      } = require("electron");
+      let clickedGoogleLoginBtn = document.getElementById('download');
+      clickedGoogleLoginBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        console.log('inside the button clicked');
+        ipcRenderer.send("download", {
+          url: "URL is here",
+          properties: { directory: "Directory is here" }
+        });
+      });
+
+      ipcRenderer.on("download complete", (event, file) => {
+        console.log(file); // Full file path
+        if(file.length > 0) {
+          document.getElementById('launch-btn').disbled = false;
+        }
+      });
+    </script>
+  </div>
+</body>
+
+</html>

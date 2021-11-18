@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline'" />
+  <link rel="stylesheet" href="css/all.min.css" />
+  <link rel="stylesheet" href="css/materialize.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script type="text/javascript" src="js/materialize.min.js"></script>
+  <title>OAuth Launcher</title>
+</head>
+
+<body>
+  <div class="container">
+    <div class="row">
+      <div class="item">
+        <div class="row">
+          <div id='login-google' class="col-md-12"> <a
+              class="btn btn-lg btn-google btn-block text-uppercase btn-outline" href="#"><img
+                src="https://img.icons8.com/color/16/000000/google-logo.png"> Login Using Google</a> </div>
+        </div>
+        <div class="or-container">
+          <div class="line-separator"></div>
+          <div class="or-label">or</div>
+          <div class="line-separator"></div>
+        </div>
+        <div class="row">
+          <div id='login-fb' class="col-md-12"> <a class="btn btn-lg btn-facebook btn-block text-uppercase btn-outline"
+              href="#"><img src="https://img.icons8.com/color/16/000000/facebook-logo.png"> Login Using Facebook</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      const path = require("path");
+      const fs = require("fs");
+      const os = require("os");
+      const {
+        ipcRenderer
+      } = require("electron");
+
+      let clickedGoogleLoginBtn = document.getElementById('login-google');
+      clickedGoogleLoginBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        console.log('inside the button clicked');
+        ipcRenderer.send('authorize', 'google')
+      });
+
+      let clickedFacebookLoginBtn = document.getElementById('login-fb');
+      clickedFacebookLoginBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        ipcRenderer.send('authorize', 'fb')
+      });
+
+    </script>
+  </div>
+</body>
+
+</html>
