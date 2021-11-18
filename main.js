@@ -158,7 +158,7 @@ const menu = [
                         click: createAboutWindow,
                     },
                     {
-                        label: "Quit OAuth Launcher",
+                        label: "Quit",
                         click: () => { app.quit(); }
                     }
                 ],
@@ -177,7 +177,7 @@ const menu = [
                 ],
             },
             {
-                label: "Quit OAuth Launcher",
+                label: "Quit",
                 click: () => { app.quit(); }
             }
         ]
