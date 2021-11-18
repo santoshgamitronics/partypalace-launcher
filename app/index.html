@@ -13,9 +13,9 @@
 </head>
 
 <body>
-  <div class="container">
-    <div class="row">
-      <div class="item">
+  <div class="launch-container">
+    <div class="launch-row">
+      <div class="launch-item">
         <div class="row">
           <div id='login-google' class="col-md-12"> <a
               class="btn btn-lg btn-google btn-block text-uppercase btn-outline" href="#"><img
@@ -51,7 +51,7 @@
       let clickedFacebookLoginBtn = document.getElementById('login-fb');
       clickedFacebookLoginBtn.addEventListener('click', function (e) {
         e.preventDefault();
-        ipcRenderer.send('authorize', 'fb')
+        ipcRenderer.send('authorize', 'facebook')
       });
 
     </script>

@@ -38,7 +38,7 @@ function launchPage() {
     request.on('response', (response) => {
         console.log(`STATUS: ${response.statusCode}`);
         console.log(`HEADERS: ${JSON.stringify(response.headers)}`);
-        if (response.statusCode === 200) {
+        if (response.statusCode !== 200) {
             mainWindow.loadFile("./app/index.html");
         } else {
             mainWindow.loadFile("./app/launcher.html");
@@ -162,8 +162,8 @@ app.on("activate", () => {
 });
 
 ipcMain.on('authorize', async (e, authorizePlatform) => {
-    if (authorizePlatform === "google") {
-        require("electron").shell.openExternal('http://localhost:5002/auth/google');
+    if(authorizePlatform) {
+        require("electron").shell.openExternal(`http://localhost:5002/auth/${authorizePlatform}`);
     }
 });
 
