@@ -14,6 +14,8 @@ image.setTemplateImage(true);
  */
 process.env.NODE_ENV = "production";
 
+const BACKEND_URL = "https://www.partypalace.xyz"
+
 let isDev = process.env.NODE_ENV === "production" ? true : true;
 let isMac = process.platform === "darwin" ? true : false;
 
@@ -41,10 +43,15 @@ if (!gotTheLock) {
         }
     })
 
-    // Create mainWindow, load the rest of the app, etc...
-    app.whenReady().then(() => {
-        createMainWindow()
-    })
+    app.on("ready", () => {
+        createMainWindow();
+
+        /**set the mainmenu of the application */
+        const mainMenu = Menu.buildFromTemplate(menu);
+        Menu.setApplicationMenu(mainMenu);
+
+        mainWindow.on("ready", () => (mainWindow = null));
+    });
 
     app.on('open-url', (event, url) => {
         dialog.showErrorBox('Welcome Back', `You arrived from: ${url}`)
@@ -52,17 +59,36 @@ if (!gotTheLock) {
 }
 
 function launchPage() {
-    const request = net.request({
-        method: 'GET',
-        protocol: 'http:',
-        hostname: '127.0.0.1',
-        port: '5002',
-        path: '/validateSession',
-        redirect: 'follow',
-        headers: {
-            'Content-Type': 'application/json'
+    let urlObj;
+    if (!isDev) {
+        urlObj = {
+            method: 'GET',
+            protocol: 'http:',
+            hostname: '127.0.0.1',
+            port: '5002',
+            path: '/validateSession',
+            redirect: 'follow',
+            headers: {
+                'Content-Type': 'application/json'
+            }
         }
+    } else {
+        urlObj = {
+            method: 'GET',
+            protocol: 'https:',
+            hostname: 'www.partypalace.xyz',
+            path: '/validateSession',
+            redirect: 'follow',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }
+    }
+
+    const request = net.request({
+        ...urlObj
     });
+
     request.on('response', (response) => {
         console.log(`STATUS: ${response.statusCode}`);
         console.log(`HEADERS: ${JSON.stringify(response.headers)}`);
@@ -100,7 +126,7 @@ function createMainWindow() {
             }
         },
     });
-
+    //launch the actual html pages
     launchPage();
 }
 
@@ -116,16 +142,6 @@ function createAboutWindow() {
 
     aboutWindow.loadFile("./app/about.html");
 }
-
-app.on("ready", () => {
-    createMainWindow();
-
-    /**set the mainmenu of the application */
-    const mainMenu = Menu.buildFromTemplate(menu);
-    Menu.setApplicationMenu(mainMenu);
-
-    mainWindow.on("ready", () => (mainWindow = null));
-});
 
 const menu = [
     ...(isMac
@@ -207,12 +223,12 @@ app.on("activate", () => {
 
 ipcMain.on('authorize', async (e, authorizePlatform) => {
     if (authorizePlatform) {
-        require("electron").shell.openExternal(`http://localhost:5002/auth/${authorizePlatform}`);
+        require("electron").shell.openExternal(`${BACKEND_URL}/auth/${authorizePlatform}`);
     }
 });
 
 ipcMain.on("download", async (event, info) => {
-    await download(BrowserWindow.getFocusedWindow(), `http://i3.ytimg.com/vi/J---aiyznGQ/mqdefault.jpg`, { directory: `${__dirname}/downloads/` })
+    await download(BrowserWindow.getFocusedWindow(), ``, { directory: `${__dirname}/downloads/` })
         .then(dl => mainWindow.webContents.send("download complete", dl.getSavePath()));
 });
 
