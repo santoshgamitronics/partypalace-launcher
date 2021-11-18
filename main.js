@@ -16,7 +16,7 @@ process.env.NODE_ENV = "production";
 
 const BACKEND_URL = "https://www.partypalace.xyz"
 
-let isDev = process.env.NODE_ENV === "production" ? true : true;
+let isDev = process.env.NODE_ENV === "development" ? true : false;
 let isMac = process.platform === "darwin" ? true : false;
 
 let mainWindow;
@@ -43,15 +43,10 @@ if (!gotTheLock) {
         }
     })
 
-    app.on("ready", () => {
-        createMainWindow();
-
-        /**set the mainmenu of the application */
-        const mainMenu = Menu.buildFromTemplate(menu);
-        Menu.setApplicationMenu(mainMenu);
-
-        mainWindow.on("ready", () => (mainWindow = null));
-    });
+    // Create mainWindow, load the rest of the app, etc...
+    app.whenReady().then(() => {
+        createWindow()
+    })
 
     app.on('open-url', (event, url) => {
         dialog.showErrorBox('Welcome Back', `You arrived from: ${url}`)
@@ -129,6 +124,15 @@ function createMainWindow() {
     //launch the actual html pages
     launchPage();
 }
+
+app.on("ready", () => {
+
+    /**set the mainmenu of the application */
+    const mainMenu = Menu.buildFromTemplate(menu);
+    Menu.setApplicationMenu(mainMenu);
+
+    mainWindow.on("ready", () => (mainWindow = null));
+});
 
 function createAboutWindow() {
     aboutWindow = new BrowserWindow({
@@ -209,11 +213,9 @@ ipcMain.on('shell:open', () => {
     shell.openExternal(pagePath)
 })
 
-app.on("window-all-closed", () => {
-    if (!isMac) {
-        app.quit();
-    }
-});
+app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') app.quit()
+})
 
 app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
