@@ -1,0 +1,2 @@
+# partypalace-launcher
+launcher application
