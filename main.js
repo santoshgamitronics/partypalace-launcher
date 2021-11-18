@@ -1,9 +1,6 @@
-const { app, BrowserWindow, Menu, ipcMain, net } = require("electron");
-const child = require('child_process').execFile;
+const { app, BrowserWindow, Menu, ipcMain, net, autoUpdater } = require("electron");
 const { download } = require('electron-dl');
 const path = require('path');
-const fs = require('fs');
-
 
 const nativeImage = require("electron").nativeImage;
 var image = nativeImage.createFromPath(__dirname + "assets/icons");
@@ -22,6 +19,37 @@ let isMac = process.platform === "darwin" ? true : false;
 
 let mainWindow;
 let aboutWindow;
+
+if (process.defaultApp) {
+    if (process.argv.length >= 2) {
+        app.setAsDefaultProtocolClient('electron-fiddle', process.execPath, [path.resolve(process.argv[1])])
+    }
+} else {
+    app.setAsDefaultProtocolClient('electron-fiddle')
+}
+
+const gotTheLock = app.requestSingleInstanceLock()
+
+if (!gotTheLock) {
+    app.quit()
+} else {
+    app.on('second-instance', (event, commandLine, workingDirectory) => {
+        // Someone tried to run a second instance, we should focus our window.
+        if (mainWindow) {
+            if (mainWindow.isMinimized()) mainWindow.restore()
+            mainWindow.focus()
+        }
+    })
+
+    // Create mainWindow, load the rest of the app, etc...
+    app.whenReady().then(() => {
+        createMainWindow()
+    })
+
+    app.on('open-url', (event, url) => {
+        dialog.showErrorBox('Welcome Back', `You arrived from: ${url}`)
+    })
+}
 
 function launchPage() {
     const request = net.request({
@@ -50,6 +78,11 @@ function launchPage() {
     request.end();
 };
 
+const server = 'https://partypalace-launcher.vercel.app';
+const url = `${server}/update/${process.platform}/${app.getVersion()}`
+
+autoUpdater.setFeedURL({ url });
+
 function createMainWindow() {
     mainWindow = new BrowserWindow({
         title: "Auth Launcher",
@@ -62,6 +95,9 @@ function createMainWindow() {
             nodeIntegration: true,
             contextIsolation: false,
             enableRemoteModule: true,
+            webPreferences: {
+                preload: path.join(__dirname, 'preload.js'),
+            }
         },
     });
 
@@ -149,6 +185,14 @@ const menu = [
         : []),
 ];
 
+
+// Handle window controls via IPC
+ipcMain.on('shell:open', () => {
+    const pageDirectory = __dirname.replace('app.asar', 'app.asar.unpacked')
+    const pagePath = path.join('file://', pageDirectory, 'index.html')
+    shell.openExternal(pagePath)
+})
+
 app.on("window-all-closed", () => {
     if (!isMac) {
         app.quit();
@@ -162,7 +206,7 @@ app.on("activate", () => {
 });
 
 ipcMain.on('authorize', async (e, authorizePlatform) => {
-    if(authorizePlatform) {
+    if (authorizePlatform) {
         require("electron").shell.openExternal(`http://localhost:5002/auth/${authorizePlatform}`);
     }
 });
@@ -171,5 +215,24 @@ ipcMain.on("download", async (event, info) => {
     await download(BrowserWindow.getFocusedWindow(), `http://i3.ytimg.com/vi/J---aiyznGQ/mqdefault.jpg`, { directory: `${__dirname}/downloads/` })
         .then(dl => mainWindow.webContents.send("download complete", dl.getSavePath()));
 });
+
+const UPDATE_CHECK_INTERVAL = 10 * 60 * 1000
+setInterval(() => {
+    autoUpdater.checkForUpdates()
+}, UPDATE_CHECK_INTERVAL);
+
+
+autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
+    const dialogOpts = {
+        type: 'info',
+        buttons: ['Restart', 'Later'],
+        title: 'Application Update',
+        message: process.platform === 'win32' ? releaseNotes : releaseName,
+        detail: 'A new version has been downloaded. Restart the application to apply the updates.'
+    }
+    dialog.showMessageBox(dialogOpts).then((returnValue) => {
+        if (returnValue.response === 0) autoUpdater.quitAndInstall()
+    })
+})
 
 app.allowRendererProcessReuse = true;

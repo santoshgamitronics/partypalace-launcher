@@ -44,7 +44,6 @@
       let clickedGoogleLoginBtn = document.getElementById('login-google');
       clickedGoogleLoginBtn.addEventListener('click', function (e) {
         e.preventDefault();
-        console.log('inside the button clicked');
         ipcRenderer.send('authorize', 'google')
       });
 
