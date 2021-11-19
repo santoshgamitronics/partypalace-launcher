@@ -1,4 +1,5 @@
-const { app, BrowserWindow, Menu, ipcMain, net, autoUpdater } = require("electron");
+const { app, BrowserWindow, Menu, ipcMain, net, autoUpdater, dialog } = require("electron");
+
 const { download } = require('electron-dl');
 const path = require('path');
 
@@ -8,26 +9,30 @@ var image = nativeImage.createFromPath(__dirname + "assets/icons");
 // where public folder on the root dir
 image.setTemplateImage(true);
 
+//electron store
+const Store = require('electron-store');
+const store = new Store();
+
 
 /**
  * set environment
  */
 process.env.NODE_ENV = "production";
 
-const BACKEND_URL = "https://www.partypalace.xyz"
-
-let isDev = process.env.NODE_ENV === "development" ? true : false;
+let isDev = process.env.NODE_ENV === "dev" ? true : true;
 let isMac = process.platform === "darwin" ? true : false;
+
+const BACKEND_URL = isDev ? "https://4632-183-83-165-90.ngrok.io" : "https://www.partypalace.xyz";
 
 let mainWindow;
 let aboutWindow;
 
 if (process.defaultApp) {
     if (process.argv.length >= 2) {
-        app.setAsDefaultProtocolClient('electron-fiddle', process.execPath, [path.resolve(process.argv[1])])
+        app.setAsDefaultProtocolClient('electron-fiddle', process.execPath, [path.resolve(process.argv[1])]);
     }
 } else {
-    app.setAsDefaultProtocolClient('electron-fiddle')
+    app.setAsDefaultProtocolClient('electron-fiddle');
 }
 
 const gotTheLock = app.requestSingleInstanceLock()
@@ -45,23 +50,40 @@ if (!gotTheLock) {
 
     // Create mainWindow, load the rest of the app, etc...
     app.whenReady().then(() => {
-        createWindow()
+        createMainWindow();
+
+        /**set the mainmenu of the application */
+        const mainMenu = Menu.buildFromTemplate(menu);
+        Menu.setApplicationMenu(mainMenu);
+
+        mainWindow.on("ready", () => (mainWindow = null));
     })
 
     app.on('open-url', (event, url) => {
-        dialog.showErrorBox('Welcome Back', `You arrived from: ${url}`)
-    })
+        dialog.showErrorBox('Welcome Back', `You arrived from: ${url}`);
+        console.log('url', JSON.stringify(url));
+        let details = url.split('?')[1];
+        details = details.split('&&');
+        if (details.length > 0) {
+            store.set('userId', details[1]);
+            store.set('sessionToken', details[0]);
+            store.set('sessionId', details[2]);
+            mainWindow.loadFile("./app/download.html");
+        } else {
+            dialog.showErrorBox('unknown issue', `please retry again`);
+        }
+    });
 }
 
 function launchPage() {
     let urlObj;
-    if (!isDev) {
+    console.log('sessionId', store.get('sessionId'));
+    if (isDev) {
         urlObj = {
             method: 'GET',
-            protocol: 'http:',
-            hostname: '127.0.0.1',
-            port: '5002',
-            path: '/validateSession',
+            protocol: 'https:',
+            hostname: '4f3d-183-83-165-90.ngrok.io',
+            path: `/validateSession/sess:${store.get('sessionId')}`,
             redirect: 'follow',
             headers: {
                 'Content-Type': 'application/json'
@@ -72,7 +94,7 @@ function launchPage() {
             method: 'GET',
             protocol: 'https:',
             hostname: 'www.partypalace.xyz',
-            path: '/validateSession',
+            path: `/validateSession/sess:${store.get('sessionId')}`,
             redirect: 'follow',
             headers: {
                 'Content-Type': 'application/json'
@@ -88,25 +110,32 @@ function launchPage() {
         console.log(`STATUS: ${response.statusCode}`);
         console.log(`HEADERS: ${JSON.stringify(response.headers)}`);
         if (response.statusCode !== 200) {
+            store.delete('userId');
+            store.delete('sessionToken');
+            store.delete('sessionId');
             mainWindow.loadFile("./app/index.html");
         } else {
-            mainWindow.loadFile("./app/launcher.html");
+            if (store.get('downloaded')) {
+                mainWindow.loadFile("./app/launcher.html");
+            } else {
+                mainWindow.loadFile("./app/download.html");
+            }
         }
     });
     request.on('error', (error) => {
-        console.log(`ERROR: ${JSON.stringify(error)}`);
+        console.log(`ERROR>>>>: ${JSON.stringify(error)}`);
     });
     request.end();
 };
 
-const server = 'https://partypalace-launcher.vercel.app';
+const server = 'https://partypalace-launcher.vercel.app/'
 const url = `${server}/update/${process.platform}/${app.getVersion()}`
 
 autoUpdater.setFeedURL({ url });
 
 function createMainWindow() {
     mainWindow = new BrowserWindow({
-        title: "Auth Launcher",
+        title: "Partypalace Launcher",
         width: 900,
         height: 750,
         icon: image,
@@ -125,18 +154,9 @@ function createMainWindow() {
     launchPage();
 }
 
-app.on("ready", () => {
-
-    /**set the mainmenu of the application */
-    const mainMenu = Menu.buildFromTemplate(menu);
-    Menu.setApplicationMenu(mainMenu);
-
-    mainWindow.on("ready", () => (mainWindow = null));
-});
-
 function createAboutWindow() {
     aboutWindow = new BrowserWindow({
-        title: "About OAuth Launcher",
+        title: "About Launcher",
         width: 300,
         height: 300,
         icon: `${__dirname}/assets/icons/gami-256x256.png`,
@@ -225,20 +245,47 @@ app.on("activate", () => {
 
 ipcMain.on('authorize', async (e, authorizePlatform) => {
     if (authorizePlatform) {
-        require("electron").shell.openExternal(`${BACKEND_URL}/auth/${authorizePlatform}`);
+        require("electron").shell.openExternal(`https://www.partypalace.xyz/auth/desktop/${authorizePlatform}`);
     }
 });
 
 ipcMain.on("download", async (event, info) => {
-    await download(BrowserWindow.getFocusedWindow(), ``, { directory: `${__dirname}/downloads/` })
-        .then(dl => mainWindow.webContents.send("download complete", dl.getSavePath()));
+    console.log(info);
+    await download(BrowserWindow.getFocusedWindow(), `https://partypalace-launcher-win.s3.amazonaws.com/PartyPalace.exe`, { directory: `${__dirname}/downloads/` })
+        .then(dl => {
+            store.set('downloaded', true);
+            mainWindow.webContents.send('downloaded', true);
+            mainWindow.webContents.send('download-progress', false);
+            mainWindow.webContents.send("download complete", dl.getSavePath());
+            const dialogOpts = {
+                type: 'info',
+                title: 'Download update',
+                message: 'Download complete',
+            }
+            dialog.showMessageBox(dialogOpts).then((returnValue) => {
+                console.log(returnValue.response);
+            })
+        }).catch(err => {
+            console.log(err);
+            store.set('downloaded', false);
+            mainWindow.webContents.send('download-progress', false);
+            const dialogOpts = {
+                type: 'error',
+                title: 'Download Update',
+                message: 'Error downloading',
+            }
+            dialog.showMessageBox(dialogOpts).then((returnValue) => {
+                if (returnValue.response === 0) return null;
+            })
+        });
 });
 
-const UPDATE_CHECK_INTERVAL = 10 * 60 * 1000
-setInterval(() => {
-    autoUpdater.checkForUpdates()
-}, UPDATE_CHECK_INTERVAL);
-
+if (!isDev) {
+    const UPDATE_CHECK_INTERVAL = 10 * 60 * 1000
+    setInterval(() => {
+        autoUpdater.checkForUpdates()
+    }, UPDATE_CHECK_INTERVAL);
+}
 
 autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
     const dialogOpts = {
@@ -251,6 +298,24 @@ autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
     dialog.showMessageBox(dialogOpts).then((returnValue) => {
         if (returnValue.response === 0) autoUpdater.quitAndInstall()
     })
+});
+
+ipcMain.on("launch", async (event, info) => {
+    const child = require('child_process').execFile;
+    const filePath = path.join(`${__dirname}`, `downloads`, `PartyVerse (11.18)`, `PartyPalace`, `Binaries`, `Win64`, `PartyPalace.exe`);
+    const parameters = [`--sessionId=${store.get('sessionToken')}`, `--userId=${store.get('userId')}`];
+    console.log(filePath);
+
+    child(filePath, parameters, function (err, data) {
+        console.log(err)
+        console.log(data.toString());
+    });
+});
+
+
+autoUpdater.on('error', message => {
+    console.error('There was a problem updating the application')
+    console.error(message)
 })
 
 app.allowRendererProcessReuse = true;
