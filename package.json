@@ -17,9 +17,9 @@
     "nodemon": "^2.0.6"
   },
   "build": {
-    "appId": "partypalacelaucherv1",
+    "appId": "oikonomopo.electron-deeplinking-macos-win32",
     "protocols": {
-      "name": "partypalacelaucherv1",
+      "name": "electron-deep-linking",
       "schemes": [
         "myapp"
       ]
