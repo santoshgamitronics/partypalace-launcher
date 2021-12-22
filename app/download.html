@@ -9,15 +9,14 @@
   <link rel="stylesheet" href="css/materialize.min.css" />
   <link rel="stylesheet" href="css/style.css" />
   <script type="text/javascript" src="js/materialize.min.js"></script>
-  <title>Partypalace Launcher</title>
+  <title>PartyNite Launcher</title>
 </head>
 
 <body>
-  <div class="launch-container">
+  <div class="img launch-container">
     <div class="launch-row">
       <div class="launch-item">
-        <button id='download' class="btn btn-primary download-btn">Download partypalace</button>
-        <button id='launch' class="btn btn-primary launch-btn">Launch partypalace</button>
+        <button id='download' class="btn-image btn btn-primary download-btn font-style">Download PartyNite</button>
       </div>
     </div>
     <script>
@@ -36,13 +35,8 @@
         });
       });
 
-
-      document.getElementById('launch').style.display = 'none';
       ipcRenderer.on("download complete", (event, file) => {
-        if(file.length > 0) {
-          document.getElementById('download').style.display = 'none';
-          document.getElementById('launch').style.display = 'block';
-        }
+        console.log('dowloaded');
       });
     </script>
   </div>

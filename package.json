@@ -1,13 +1,14 @@
 {
-  "name": "partypalace-launcher",
+  "name": "party-nite-launcher",
   "version": "1.0.0",
-  "description": "A windows/mac launcher for partypalace",
+  "description": "A windows/mac launcher for partyNite",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "dev": "nodemon --exec electron .",
     "package-mac": "electron-packager . --overwrite --platform=darwin --arch=x64 --icon=assets/icons/mac/gami-256x256.icns --prune=true --out=release-builds",
-    "package-win": "electron-packager . --overwrite --platform=win32 --arch=ia32 --icon=assets/icons/win/gami-256x256.png.ico --prune=true --out=release-builds --version-string.CompanyName=CE --version-string.FileDescription=CE --version-string.ProductName=\"Partypalace launcher\""
+    "package-win-64": "electron-packager . --overwrite --platform=win32 --arch=x64 --icon=assets/icons/win/gami-256x256.ico --prune=true --out=release-builds --version-string.CompanyName=CE --version-string.FileDescription=CE --version-string.ProductName=\"PartyNiteLauncher\"",
+    "package-win-32": "electron-packager . --overwrite --platform=win32 --arch=ia32 --icon=assets/icons/win/gami-256x256.ico --prune=true --out=release-builds --version-string.CompanyName=CE --version-string.FileDescription=CE --version-string.ProductName=\"PartyNiteLauncher\""
   },
   "author": "Santosh Kumar M",
   "license": "ISC",
@@ -15,19 +16,6 @@
     "electron": "^15.3.0",
     "electron-packager": "^15.2.0",
     "nodemon": "^2.0.6"
-  },
-  "build": {
-    "appId": "oikonomopo.electron-deeplinking-macos-win32",
-    "protocols": {
-      "name": "electron-deep-linking",
-      "schemes": [
-        "myapp"
-      ]
-    },
-    "mac": {
-      "category": "public.app-category.Reference"
-    },
-    "win": {}
   },
   "dependencies": {
     "electron-dl": "^3.3.0",
