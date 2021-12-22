@@ -62,7 +62,6 @@ if (gotTheLock) {
         store.set('userId', details[1]);
         store.set('sessionToken', details[0]);
         store.set('sessionId', details[2]);
-        store.set('entityToken', details[3]);
         if (store.get('downloaded')) {
           mainWindow.loadFile(`${__dirname}/app/launcher.html`);
         } else {
@@ -103,7 +102,7 @@ function launchPage() {
     urlObj = {
       method: 'GET',
       protocol: 'https:',
-      hostname: 'dev.partypalace.xyz',
+      hostname: 'www.partypalace.xyz',
       path: `/validateSession/sess:${store.get('sessionId')}`,
       redirect: 'follow',
       headers: {
@@ -155,8 +154,8 @@ function createMainWindow() {
   // Create the browser window.
   mainWindow = new BrowserWindow({
     title: "Partypalace Launcher",
-    width: 650,
-    height: 550,
+    width: 900,
+    height: 750,
     icon: image,
     resizable: false,
     backgroundColor: "white",
@@ -194,7 +193,6 @@ function createMainWindow() {
         store.set('userId', details[1]);
         store.set('sessionToken', details[0]);
         store.set('sessionId', details[2]);
-        store.set('entityToken', details[3]);
         logEverywhere(`stored userd id 1', ${store.get('userId')}`);
       } else {
         dialog.showErrorBox('Not Found', 'Redirect link not found');
@@ -339,7 +337,7 @@ ipcMain.on('authorize', async (e, authorizePlatform) => {
 
 ipcMain.on("download", async (event, info) => {
   logEverywhere(info);
-  await download(BrowserWindow.getFocusedWindow(), 'https://p.bigstockphoto.com/GeFvQkBbSLaMdpKXF1Zv_bigstock-Aerial-View-Of-Blue-Lakes-And--227291596.jpg', { directory: `${__dirname}/downloads/` })
+  await download(BrowserWindow.getFocusedWindow(), `https://www.bing.com/images/search?q=dummy+image+download&id=065008F2773C839D45851E59F70B29AFB088EEF4&FORM=IQFRBA`, { directory: `${__dirname}/downloads/` })
     .then(dl => {
       store.set('downloaded', true);
       mainWindow.webContents.send('downloaded', true);
@@ -370,10 +368,12 @@ ipcMain.on("download", async (event, info) => {
     });
 });
 
-  const UPDATE_CHECK_INTERVAL = 180000 //every 3 mins
+if (!isDev) {
+  const UPDATE_CHECK_INTERVAL = 10 * 60 * 1000
   setInterval(() => {
     autoUpdater.checkForUpdates()
   }, UPDATE_CHECK_INTERVAL);
+}
 
 autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
   const dialogOpts = {
@@ -392,7 +392,7 @@ ipcMain.on("launch", async (event, info) => {
   logEverywhere('inside launch')
   const child = require('child_process').execFile;
   logEverywhere('child')
-  const parameters = [`-SessionID=${store.get('sessionToken')}`, `-UserID=${store.get('userId')}`, `-EntityToken=${store.get('entityToken')}`];
+  const parameters = [`-SessionID=${store.get('sessionToken')}`, `-UserID=${store.get('userId')}`];
   const executablePath = `${__dirname}\\downloads\\partyPalace.exe`;
   logEverywhere(executablePath);
 
@@ -408,8 +408,8 @@ ipcMain.on("launch", async (event, info) => {
 
 
 autoUpdater.on('error', message => {
-  logEverywhere('There was a problem updating the application');
-  logEverywhere(message);
+  console.error('There was a problem updating the application')
+  console.error(message)
 })
 
 // Quit when all windows are closed.
