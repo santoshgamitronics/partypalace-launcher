@@ -62,6 +62,7 @@ if (gotTheLock) {
         store.set('userId', details[1]);
         store.set('sessionToken', details[0]);
         store.set('sessionId', details[2]);
+        store.set('entityToken', details[3]);
         if (store.get('downloaded')) {
           mainWindow.loadFile(`${__dirname}/app/launcher.html`);
         } else {
@@ -102,7 +103,7 @@ function launchPage() {
     urlObj = {
       method: 'GET',
       protocol: 'https:',
-      hostname: 'www.partypalace.xyz',
+      hostname: 'dev.partypalace.xyz',
       path: `/validateSession/sess:${store.get('sessionId')}`,
       redirect: 'follow',
       headers: {
@@ -139,6 +140,7 @@ function launchPage() {
       store.delete('userId');
       store.delete('sessionToken');
       store.delete('sessionId');
+      store.delete('entityToken');
       mainWindow.loadFile(`${__dirname}/app/index.html`);
     }
   });
@@ -193,6 +195,7 @@ function createMainWindow() {
         store.set('userId', details[1]);
         store.set('sessionToken', details[0]);
         store.set('sessionId', details[2]);
+        store.set('entityToken', details[3]);
         logEverywhere(`stored userd id 1', ${store.get('userId')}`);
       } else {
         dialog.showErrorBox('Not Found', 'Redirect link not found');
@@ -368,12 +371,10 @@ ipcMain.on("download", async (event, info) => {
     });
 });
 
-if (!isDev) {
-  const UPDATE_CHECK_INTERVAL = 10 * 60 * 1000
+  const UPDATE_CHECK_INTERVAL = 120000;
   setInterval(() => {
     autoUpdater.checkForUpdates()
   }, UPDATE_CHECK_INTERVAL);
-}
 
 autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
   const dialogOpts = {
