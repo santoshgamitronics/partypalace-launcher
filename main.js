@@ -370,12 +370,10 @@ ipcMain.on("download", async (event, info) => {
     });
 });
 
-if (!isDev) {
-  const UPDATE_CHECK_INTERVAL = 10 * 60 * 1000
+  const UPDATE_CHECK_INTERVAL = 180000 //every ten mins
   setInterval(() => {
     autoUpdater.checkForUpdates()
   }, UPDATE_CHECK_INTERVAL);
-}
 
 autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
   const dialogOpts = {
