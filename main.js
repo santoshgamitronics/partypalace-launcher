@@ -370,7 +370,7 @@ ipcMain.on("download", async (event, info) => {
     });
 });
 
-  const UPDATE_CHECK_INTERVAL = 180000 //every ten mins
+  const UPDATE_CHECK_INTERVAL = 180000 //every 3 mins
   setInterval(() => {
     autoUpdater.checkForUpdates()
   }, UPDATE_CHECK_INTERVAL);
