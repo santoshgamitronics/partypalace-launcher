@@ -393,7 +393,7 @@ ipcMain.on("launch", async (event, info) => {
   logEverywhere('inside launch')
   const child = require('child_process').execFile;
   logEverywhere('child')
-  const parameters = [`-SessionID=${store.get('sessionToken')}`, `-UserID=${store.get('userId')}`];
+  const parameters = [`-SessionID=${store.get('sessionToken')}`, `-UserID=${store.get('userId')}`, `-EntityToken=${store.get('entityToken')}`];
   const executablePath = `${__dirname}\\downloads\\partyPalace.exe`;
   logEverywhere(executablePath);
 
