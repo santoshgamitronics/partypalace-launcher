@@ -1,6 +1,6 @@
 {
   "name": "party-nite-launcher",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A windows/mac launcher for partyNite",
   "main": "main.js",
   "scripts": {
