@@ -32,7 +32,12 @@ let mainWindow;
 let aboutWindow;
 
 // Deep linked url
-var deeplinkingUrl;
+let deeplinkingUrl;
+
+function replaceEncodeSpaceString(str) {
+  let del = new RegExp('%20');
+  str.match(del);
+}
 
 // Force Single Instance Application
 const gotTheLock = app.requestSingleInstanceLock()
@@ -66,6 +71,7 @@ if (gotTheLock) {
         store.set('sessionId', details[2]);
         store.set('entityToken', details[3]);
         store.set('playerName', details[4]);
+        mainWindow.webContents.send("get-receieved-player-name", replaceEncodeSpaceString(playerName));
         if (store.get('downloaded')) {
           mainWindow.loadFile(`${__dirname}/app/launcher.html`);
         } else {
@@ -195,14 +201,15 @@ function createMainWindow() {
 
       let details = url.split('?')[1];
       details = details.split('&&');
-      logEverywhere(details);
+      // logEverywhere(details);
       if (details.length > 0) {
         store.set('userId', details[1]);
         store.set('sessionToken', details[0]);
         store.set('sessionId', details[2]);
         store.set('entityToken', details[3]);
         store.set('playerName', details[4]);
-        logEverywhere(`stored userd id 1', ${store.get('userId')}`);
+        mainWindow.webContents.send("get-receieved-player-name", replaceEncodeSpaceString(playerName));
+        logEverywhere(`stored userd id 1', ${store.get('entityToken')}`);
       } else {
         dialog.showErrorBox('Not Found', 'Redirect link not found');
       }
@@ -210,7 +217,9 @@ function createMainWindow() {
   }
 
   logEverywhere(`stored userd id', ${store.get('userId')}`);
-  launchPage();
+  // launchPage();
+  mainWindow.loadFile(`${__dirname}/app/download.html`);
+
   // Emitted when the window is closed.
   mainWindow.on('closed', function () {
     // Dereference the window object, usually you would store windows
@@ -340,7 +349,7 @@ app.on('will-finish-launching', function () {
 
 ipcMain.on('authorize', async (e, authorizePlatform) => {
   if (authorizePlatform) {
-    require("electron").shell.openExternal(`https://www.partypalace.xyz/auth/desktop/${authorizePlatform}`);
+    require("electron").shell.openExternal(`https://dev.partypalace.xyz/auth/desktop/${authorizePlatform}`);
   }
 });
 
@@ -423,7 +432,7 @@ app.on('will-finish-launching', function () {
   app.on('open-url', function (event, url) {
     event.preventDefault()
     deeplinkingUrl = url
-    // logEverywhere('open-url# ' + deeplinkingUrl)
+    logEverywhere('open-url# 2 ' + deeplinkingUrl)
   })
 })
 // Log both at dev console and at running node console instance

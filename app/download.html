@@ -13,7 +13,9 @@
 </head>
 
 <body>
+
   <div class="img launch-container">
+    <div class="player-name" id="player-name"></div>
     <div class="launch-row">
       <div class="launch-item">
         <button id='download' class="btn-image btn btn-primary download-btn font-style">Download PartyNite</button>
@@ -37,6 +39,10 @@
 
       ipcRenderer.on("download complete", (event, file) => {
         console.log('dowloaded');
+      });
+
+      ipcRenderer.on("get-receieved-player-name", (event, text) => {
+        document.getElementById('player-name').innerHTML = text;
       });
     </script>
   </div>
