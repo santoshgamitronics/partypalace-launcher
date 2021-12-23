@@ -1,5 +1,7 @@
 const { app, BrowserWindow, Menu, ipcMain, net, autoUpdater, dialog } = require("electron");
 
+// const uaup = require('uaup-js');
+
 const { download } = require('electron-dl');
 const path = require('path');
 
@@ -63,6 +65,7 @@ if (gotTheLock) {
         store.set('sessionToken', details[0]);
         store.set('sessionId', details[2]);
         store.set('entityToken', details[3]);
+        store.set('playerName', details[4]);
         if (store.get('downloaded')) {
           mainWindow.loadFile(`${__dirname}/app/launcher.html`);
         } else {
@@ -124,6 +127,8 @@ function launchPage() {
       store.delete('userId');
       store.delete('sessionToken');
       store.delete('sessionId');
+      store.delete('entityToken');
+      store.delete('playerName');
       mainWindow.loadFile(`${__dirname}/app/index.html`);
     } else {
       if (store.get('downloaded')) {
@@ -147,10 +152,10 @@ function launchPage() {
   request.end();
 };
 
-const server = 'https://partypalace-launcher.vercel.app/'
-const urlAutoUpdater = `${server}/update/${process.platform}/${app.getVersion()}`
+// const server = 'https://partypalace-launcher.vercel.app/'
+// const urlAutoUpdater = `${server}/update/${process.platform}/${app.getVersion()}`
 
-autoUpdater.setFeedURL({ url: urlAutoUpdater });
+// autoUpdater.setFeedURL({ url: urlAutoUpdater });
 
 function createMainWindow() {
   // Create the browser window.
@@ -196,6 +201,7 @@ function createMainWindow() {
         store.set('sessionToken', details[0]);
         store.set('sessionId', details[2]);
         store.set('entityToken', details[3]);
+        store.set('playerName', details[4]);
         logEverywhere(`stored userd id 1', ${store.get('userId')}`);
       } else {
         dialog.showErrorBox('Not Found', 'Redirect link not found');
@@ -371,29 +377,12 @@ ipcMain.on("download", async (event, info) => {
     });
 });
 
-  const UPDATE_CHECK_INTERVAL = 120000;
-  setInterval(() => {
-    autoUpdater.checkForUpdates()
-  }, UPDATE_CHECK_INTERVAL);
-
-autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
-  const dialogOpts = {
-    type: 'info',
-    buttons: ['Restart', 'Later'],
-    title: 'Application Update',
-    message: !isMac ? releaseNotes : releaseName,
-    detail: 'A new version has been downloaded. Restart the application to apply the updates.'
-  }
-  dialog.showMessageBox(dialogOpts).then((returnValue) => {
-    if (returnValue.response === 0) autoUpdater.quitAndInstall()
-  })
-});
 
 ipcMain.on("launch", async (event, info) => {
   logEverywhere('inside launch')
   const child = require('child_process').execFile;
   logEverywhere('child')
-  const parameters = [`-SessionID=${store.get('sessionToken')}`, `-UserID=${store.get('userId')}`, `-EntityToken=${store.get('entityToken')}`];
+  const parameters = [`-SessionID=${store.get('sessionToken')}`, `-UserID=${store.get('userId')}`, `-EntityToken=${store.get('entityToken')}`, `-PlayerName=${store.get('playerName')}`];
   const executablePath = `${__dirname}\\downloads\\partyPalace.exe`;
   logEverywhere(executablePath);
 
@@ -406,12 +395,6 @@ ipcMain.on("launch", async (event, info) => {
     logEverywhere(data.toString());
   });
 });
-
-
-autoUpdater.on('error', message => {
-  console.error('There was a problem updating the application')
-  console.error(message)
-})
 
 // Quit when all windows are closed.
 app.on('window-all-closed', function () {
