@@ -28,6 +28,9 @@
       const {
         ipcRenderer
       } = require("electron");
+      const Store = require('electron-store');
+      const store = new Store();
+
       let clickedGoogleLoginBtn = document.getElementById('download');
       clickedGoogleLoginBtn.addEventListener('click', function (e) {
         e.preventDefault();
@@ -41,9 +44,10 @@
         console.log('dowloaded');
       });
 
-      ipcRenderer.on("get-receieved-player-name", (event, text) => {
-        document.getElementById('player-name').innerHTML = text;
-      });
+      if(store.get('partyName')) {
+        document.getElementById('playerName').innerText = store.get('partyName')
+      }
+
     </script>
   </div>
 </body>

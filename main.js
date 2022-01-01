@@ -1,12 +1,9 @@
-const { app, BrowserWindow, Menu, ipcMain, net, autoUpdater, dialog } = require("electron");
+const { app, BrowserWindow, Menu, ipcMain, net, autoUpdater, dialog, webContents } = require("electron");
 
 // const uaup = require('uaup-js');
 
 const { download } = require('electron-dl');
 const path = require('path');
-
-// Module with utilities for URL resolution and parsing.
-const url = require('url')
 
 const nativeImage = require("electron").nativeImage;
 var image = nativeImage.createFromPath(__dirname + "assets/icons");
@@ -32,46 +29,42 @@ let mainWindow;
 let aboutWindow;
 
 // Deep linked url
-let deeplinkingUrl;
+var deeplinkingUrl;
 
 function replaceEncodeSpaceString(str) {
-  let del = new RegExp('%20');
-  str.match(del);
+  return decodeURI(str);
 }
 
 // Force Single Instance Application
 const gotTheLock = app.requestSingleInstanceLock()
 if (gotTheLock) {
   app.on('second-instance', (e, argv) => {
-    // Someone tried to run a second instance, we should focus our window.
 
-    // Protocol handler for win32
-    // argv: An array of the second instance’s (command line / deep linked) arguments
-
-    // Protocol handler for win32
     if (process.platform == 'win32') {
-      // Keep only command line / deep linked arguments
       logEverywhere(`process: ${process.argv}`)
       deeplinkingUrl = argv.slice(1);
     }
 
-    logEverywhere(`createMainWindow# , ${Array.isArray(deeplinkingUrl)}, ${deeplinkingUrl[1]}`);
+    logEverywhere(`createMainWindow# 1, ${Array.isArray(deeplinkingUrl)}, ${deeplinkingUrl[1]}`);
     if (deeplinkingUrl.length > 0) {
       const url = deeplinkingUrl[1];
-      dialog.showMessageBox({
-        title: `Welcome Back`,
-        message: `You arrived from: ${url}`
-      });
       let details = url.split('?')[1];
       details = details.split('&&');
-      logEverywhere(details);
+      logEverywhere(`${details}`);
       if (details.length > 0) {
         store.set('userId', details[1]);
         store.set('sessionToken', details[0]);
         store.set('sessionId', details[2]);
         store.set('entityToken', details[3]);
         store.set('playerName', details[4]);
-        mainWindow.webContents.send("get-receieved-player-name", replaceEncodeSpaceString(playerName));
+        const playerName = details[4];
+
+        dialog.showMessageBox({
+          title: `Welcome Back ${replaceEncodeSpaceString(playerName)}`
+        }, (response) => {
+          logEverywhere('login', response);
+          mainWindow.webContents.send('get-receieved-player-name', replaceEncodeSpaceString(store.get('playerName')));
+        });
         if (store.get('downloaded')) {
           mainWindow.loadFile(`${__dirname}/app/launcher.html`);
         } else {
@@ -94,30 +87,16 @@ if (gotTheLock) {
 
 function launchPage() {
   let urlObj;
-  logEverywhere(`sessionId>>>, ${store.get('sessionId')}`);
+  logEverywhere(`sessionId>>>, ${store.get('sessionId')}, ${store.delete('playerName')}`);
   store.delete('downloaded');
-
-  if (false) {
-    urlObj = {
-      method: 'GET',
-      protocol: 'https:',
-      hostname: '4f3d-183-83-165-90.ngrok.io',
-      path: `/validateSession/sess:${store.get('sessionId')}`,
-      redirect: 'follow',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }
-  } else {
-    urlObj = {
-      method: 'GET',
-      protocol: 'https:',
-      hostname: 'dev.partypalace.xyz',
-      path: `/validateSession/sess:${store.get('sessionId')}`,
-      redirect: 'follow',
-      headers: {
-        'Content-Type': 'application/json'
-      }
+  urlObj = {
+    method: 'GET',
+    protocol: 'https:',
+    hostname: 'dev.partypalace.xyz',
+    path: `/validateSession/sess:${store.get('sessionId')}`,
+    redirect: 'follow',
+    headers: {
+      'Content-Type': 'application/json'
     }
   }
 
@@ -147,11 +126,12 @@ function launchPage() {
 
   request.on('error', (error) => {
     logEverywhere(`ERROR>>>>: ${JSON.stringify(error)}`);
-    if(error instanceof Error) { 
+    if (error instanceof Error) {
       store.delete('userId');
       store.delete('sessionToken');
       store.delete('sessionId');
       store.delete('entityToken');
+      store.delete('playerName');
       mainWindow.loadFile(`${__dirname}/app/index.html`);
     }
   });
@@ -187,15 +167,11 @@ function createMainWindow() {
     // Keep only command line / deep linked arguments
     logEverywhere(process.argv);
     deeplinkingUrl = process.argv.slice(1);
-    logEverywhere(`createMainWindow#, ${Array.isArray(deeplinkingUrl)}`);
+    logEverywhere(`createMainWindow# 2, ${Array.isArray(deeplinkingUrl)}`);
     if (Array.isArray(deeplinkingUrl)
-      && deeplinkingUrl.length > 0 
+      && deeplinkingUrl.length > 0
       && deeplinkingUrl[0] !== ".") {
       const url = deeplinkingUrl[0];
-      dialog.showMessageBox({
-        title: `Welcome Back`,
-        message: `You arrived from: ${url}`
-      });
 
       logEverywhere(`url ${url}`);
 
@@ -208,8 +184,13 @@ function createMainWindow() {
         store.set('sessionId', details[2]);
         store.set('entityToken', details[3]);
         store.set('playerName', details[4]);
-        mainWindow.webContents.send("get-receieved-player-name", replaceEncodeSpaceString(playerName));
+        const playerName = details[4];
         logEverywhere(`stored userd id 1', ${store.get('entityToken')}`);
+        dialog.showMessageBox({
+          title: `Welcome Back ${replaceEncodeSpaceString(playerName)}`
+        }, (response) => {
+          mainWindow.webContents.send('get-receieved-player-name', replaceEncodeSpaceString(store.get('playerName')));
+        });
       } else {
         dialog.showErrorBox('Not Found', 'Redirect link not found');
       }
@@ -217,8 +198,7 @@ function createMainWindow() {
   }
 
   logEverywhere(`stored userd id', ${store.get('userId')}`);
-  // launchPage();
-  mainWindow.loadFile(`${__dirname}/app/download.html`);
+  launchPage();
 
   // Emitted when the window is closed.
   mainWindow.on('closed', function () {
@@ -369,7 +349,6 @@ ipcMain.on("download", async (event, info) => {
       dialog.showMessageBox(dialogOpts).then((returnValue) => {
         logEverywhere(`response ${returnValue.response}`);
         mainWindow.loadFile(`${__dirname}/app/launcher.html`);
-
       })
     }).catch(err => {
       logEverywhere(JSON.stringify(err));
@@ -391,13 +370,16 @@ ipcMain.on("launch", async (event, info) => {
   logEverywhere('inside launch')
   const child = require('child_process').execFile;
   logEverywhere('child')
-  const parameters = [`-SessionID=${store.get('sessionToken')}`, `-UserID=${store.get('userId')}`, `-EntityToken=${store.get('entityToken')}`, `-PlayerName=${store.get('playerName')}`];
+  logEverywhere(`store.get('entityToken'), ${store.get('entityToken')}`);
+  logEverywhere(`${store.get('playerName')}`)
+  const playerName = replaceEncodeSpaceString(store.get('playerName'));
+  const parameters = [`-SessionID=${store.get('sessionToken')}`, `-UserID=${store.get('userId')}`, `-EntityToken=${store.get('entityToken')}`, `-PlayerName=${playerName}`];
   const executablePath = `${__dirname}\\downloads\\partyPalace.exe`;
   logEverywhere(executablePath);
 
   child(executablePath, parameters, function (err, data) {
     if (err) {
-     logEverywhere(`here${err}`);
+      logEverywhere(`here${err}`);
       return;
     }
 
