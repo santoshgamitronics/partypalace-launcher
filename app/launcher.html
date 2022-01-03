@@ -27,15 +27,23 @@
       const {
         ipcRenderer
       } = require("electron");
+      const Store = require('electron-store');
+      const store = new Store();
+
+      function replaceEncodeSpaceString(str) {
+        return decodeURI(str);
+      }
+      
       let clickedGoogleLoginBtn = document.getElementById('launch');
       clickedGoogleLoginBtn.addEventListener('click', function (e) {
         e.preventDefault();
         ipcRenderer.send("launch", true);
       });
 
-      ipcRenderer.on("get-receieved-player-name", (event, text) => {
-        document.getElementById('player-name').innerHTML = text;
-      });
+      window.onload = function () {
+        const playerName = store.get("playerName");
+        document.getElementById('player-name').innerText = replaceEncodeSpaceString(playerName).toString();
+      }
     </script>
   </div>
 </body>

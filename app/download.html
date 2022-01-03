@@ -13,7 +13,6 @@
 </head>
 
 <body>
-
   <div class="img launch-container">
     <div class="player-name" id="player-name"></div>
     <div class="launch-row">
@@ -31,23 +30,23 @@
       const Store = require('electron-store');
       const store = new Store();
 
+      function replaceEncodeSpaceString(str) {
+        return decodeURI(str);
+      }
+
       let clickedGoogleLoginBtn = document.getElementById('download');
       clickedGoogleLoginBtn.addEventListener('click', function (e) {
         e.preventDefault();
         ipcRenderer.send("download", {
           url: "URL is here",
-          properties: { directory: "Directory is here" }
+          properties: { directory: `${__dirname}/downloads/` }
         });
       });
 
-      ipcRenderer.on("download complete", (event, file) => {
-        console.log('dowloaded');
-      });
-
-      if(store.get('partyName')) {
-        document.getElementById('playerName').innerText = store.get('partyName')
+      window.onload = function () {
+        const playerName = store.get("playerName");
+        document.getElementById('player-name').innerText = replaceEncodeSpaceString(playerName).toString();
       }
-
     </script>
   </div>
 </body>

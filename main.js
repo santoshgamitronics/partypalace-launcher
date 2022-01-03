@@ -50,7 +50,7 @@ if (gotTheLock) {
       const url = deeplinkingUrl[1];
       let details = url.split('?')[1];
       details = details.split('&&');
-      logEverywhere(`${details}`);
+      logEverywhere(`details: ${details}`);
       if (details.length > 0) {
         store.set('userId', details[1]);
         store.set('sessionToken', details[0]);
@@ -58,12 +58,13 @@ if (gotTheLock) {
         store.set('entityToken', details[3]);
         store.set('playerName', details[4]);
         const playerName = details[4];
+        logEverywhere(`playerName: ${playerName}`)
+        mainWindow.webContents.send('assign-player-name', replaceEncodeSpaceString(playerName).toString());
 
         dialog.showMessageBox({
           title: `Welcome Back ${replaceEncodeSpaceString(playerName)}`
         }, (response) => {
           logEverywhere('login', response);
-          mainWindow.webContents.send('get-receieved-player-name', replaceEncodeSpaceString(store.get('playerName')));
         });
         if (store.get('downloaded')) {
           mainWindow.loadFile(`${__dirname}/app/launcher.html`);
@@ -213,20 +214,21 @@ function createAboutWindow() {
   aboutWindow = new BrowserWindow({
     title: "About Launcher",
     width: 300,
-    height: 300,
-    icon: `${__dirname}/assets/icons/gami-256x256.png`,
+    height: 150,
+    icon: `${__dirname}/assets/icons/win/partynite.ico`,
     resizable: false,
     backgroundColor: "white",
   });
 
   aboutWindow.loadFile(`${__dirname}/app/about.html`);
+  aboutWindow.setMenuBarVisibility(false);
 }
 
 const menu = [
   ...(isMac
     ? [
       {
-        label: "OAuth Launcher",
+        label: "Partynite Launcher",
         submenu: [
           {
             label: "About",
