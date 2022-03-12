@@ -135,7 +135,7 @@ autoUpdater.setFeedURL({ url: urlAutoUpdater });
 setInterval(() => {
   console.log('inside the auto updater interval');
   autoUpdater.checkForUpdates();
-}, 60000);
+}, 2000);
 
 function createMainWindow() {
   // Create the browser window.
