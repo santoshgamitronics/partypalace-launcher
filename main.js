@@ -127,7 +127,7 @@ function launchPage() {
   request.end();
 };
 
-const server = 'https://partypalace-launcher.vercel.app/'
+const server = 'https://partypalace-launcher-aansikr5e-santoshgamitronics.vercel.app/'
 const urlAutoUpdater = `${server}/update/${process.platform}/${app.getVersion()}`
 
 autoUpdater.setFeedURL({ url: urlAutoUpdater });
