@@ -133,8 +133,9 @@ const urlAutoUpdater = `${server}/update/${process.platform}/${app.getVersion()}
 autoUpdater.setFeedURL({ url: urlAutoUpdater });
 
 setInterval(() => {
+  console.log('inside the auto updater interval');
   autoUpdater.checkForUpdates();
-}, 6000);
+}, 60000);
 
 function createMainWindow() {
   // Create the browser window.
