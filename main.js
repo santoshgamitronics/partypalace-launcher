@@ -41,16 +41,13 @@ if (gotTheLock) {
   app.on('second-instance', (e, argv) => {
 
     if (process.platform == 'win32') {
-      logEverywhere(`process: ${process.argv}`)
       deeplinkingUrl = argv.slice(1);
     }
 
-    logEverywhere(`createMainWindow# 1, ${Array.isArray(deeplinkingUrl)}, ${deeplinkingUrl[1]}`);
     if (deeplinkingUrl.length > 0) {
       const url = deeplinkingUrl[1];
       let details = url.split('?')[1];
       details = details.split('&&');
-      logEverywhere(`details: ${details}`);
       if (details.length > 0) {
         store.set('userId', details[1]);
         store.set('sessionToken', details[0]);
@@ -58,13 +55,10 @@ if (gotTheLock) {
         store.set('entityToken', details[3]);
         store.set('playerName', details[4]);
         const playerName = details[4];
-        logEverywhere(`playerName: ${playerName}`)
         mainWindow.webContents.send('assign-player-name', replaceEncodeSpaceString(playerName).toString());
 
         dialog.showMessageBox({
           title: `Welcome Back ${replaceEncodeSpaceString(playerName)}`
-        }, (response) => {
-          logEverywhere('login', response);
         });
         if (store.get('downloaded')) {
           mainWindow.loadFile(`${__dirname}/app/launcher.html`);
@@ -83,12 +77,10 @@ if (gotTheLock) {
   })
 } else {
   app.quit()
-  return
 }
 
 function launchPage() {
   let urlObj;
-  logEverywhere(`sessionId>>>, ${store.get('sessionId')}, ${store.delete('playerName')}`);
   store.delete('downloaded');
   urlObj = {
     method: 'GET',
@@ -106,10 +98,7 @@ function launchPage() {
   });
 
   request.on('response', (response) => {
-    logEverywhere(`STATUS: ${response.statusCode}`);
-    logEverywhere(`HEADERS: ${JSON.stringify(response.headers)}`);
-
-    if (response.statusCode !== 200) {
+   if (response.statusCode !== 200) {
       store.delete('userId');
       store.delete('sessionToken');
       store.delete('sessionId');
@@ -126,7 +115,6 @@ function launchPage() {
   });
 
   request.on('error', (error) => {
-    logEverywhere(`ERROR>>>>: ${JSON.stringify(error)}`);
     if (error instanceof Error) {
       store.delete('userId');
       store.delete('sessionToken');
@@ -139,10 +127,14 @@ function launchPage() {
   request.end();
 };
 
-// const server = 'https://partypalace-launcher.vercel.app/'
-// const urlAutoUpdater = `${server}/update/${process.platform}/${app.getVersion()}`
+const server = 'https://partypalace-launcher.vercel.app/'
+const urlAutoUpdater = `${server}/update/${process.platform}/${app.getVersion()}`
 
-// autoUpdater.setFeedURL({ url: urlAutoUpdater });
+autoUpdater.setFeedURL({ url: urlAutoUpdater });
+
+setInterval(() => {
+  autoUpdater.checkForUpdates();
+}, 6000);
 
 function createMainWindow() {
   // Create the browser window.
@@ -166,19 +158,14 @@ function createMainWindow() {
   // Protocol handler for win32
   if (process.platform == 'win32') {
     // Keep only command line / deep linked arguments
-    logEverywhere(process.argv);
     deeplinkingUrl = process.argv.slice(1);
-    logEverywhere(`createMainWindow# 2, ${Array.isArray(deeplinkingUrl)}`);
     if (Array.isArray(deeplinkingUrl)
       && deeplinkingUrl.length > 0
       && deeplinkingUrl[0] !== ".") {
       const url = deeplinkingUrl[0];
 
-      logEverywhere(`url ${url}`);
-
-      let details = url.split('?')[1];
+     let details = url.split('?')[1];
       details = details.split('&&');
-      // logEverywhere(details);
       if (details.length > 0) {
         store.set('userId', details[1]);
         store.set('sessionToken', details[0]);
@@ -186,7 +173,6 @@ function createMainWindow() {
         store.set('entityToken', details[3]);
         store.set('playerName', details[4]);
         const playerName = details[4];
-        logEverywhere(`stored userd id 1', ${store.get('entityToken')}`);
         dialog.showMessageBox({
           title: `Welcome Back ${replaceEncodeSpaceString(playerName)}`
         }, (response) => {
@@ -198,7 +184,6 @@ function createMainWindow() {
     }
   }
 
-  logEverywhere(`stored userd id', ${store.get('userId')}`);
   launchPage();
 
   // Emitted when the window is closed.
@@ -323,8 +308,7 @@ app.on('will-finish-launching', function () {
   // Protocol handler for osx
   app.on('open-url', function (event, url) {
     event.preventDefault()
-    deeplinkingUrl = url
-    logEverywhere('open-url# ' + deeplinkingUrl);
+    deeplinkingUrl = url;
   })
 })
 
@@ -336,7 +320,6 @@ ipcMain.on('authorize', async (e, authorizePlatform) => {
 });
 
 ipcMain.on("download", async (event, info) => {
-  logEverywhere(info);
   await download(BrowserWindow.getFocusedWindow(), `https://www.bing.com/images/search?q=dummy+image+download&id=065008F2773C839D45851E59F70B29AFB088EEF4&FORM=IQFRBA`, { directory: `${__dirname}/downloads/` })
     .then(dl => {
       store.set('downloaded', true);
@@ -349,11 +332,9 @@ ipcMain.on("download", async (event, info) => {
         message: 'Download complete',
       }
       dialog.showMessageBox(dialogOpts).then((returnValue) => {
-        logEverywhere(`response ${returnValue.response}`);
         mainWindow.loadFile(`${__dirname}/app/launcher.html`);
       })
     }).catch(err => {
-      logEverywhere(JSON.stringify(err));
       store.set('downloaded', false);
       mainWindow.webContents.send('download-progress', false);
       const dialogOpts = {
@@ -369,23 +350,16 @@ ipcMain.on("download", async (event, info) => {
 
 
 ipcMain.on("launch", async (event, info) => {
-  logEverywhere('inside launch')
   const child = require('child_process').execFile;
-  logEverywhere('child')
-  logEverywhere(`store.get('entityToken'), ${store.get('entityToken')}`);
-  logEverywhere(`${store.get('playerName')}`)
   const playerName = replaceEncodeSpaceString(store.get('playerName'));
   const parameters = [`-SessionID=${store.get('sessionToken')}`, `-UserID=${store.get('userId')}`, `-EntityToken=${store.get('entityToken')}`, `-PlayerName=${playerName}`];
   const executablePath = `${__dirname}\\downloads\\partyPalace.exe`;
-  logEverywhere(executablePath);
 
   child(executablePath, parameters, function (err, data) {
     if (err) {
-      logEverywhere(`here${err}`);
       return;
     }
 
-    logEverywhere(data.toString());
   });
 });
 
@@ -415,14 +389,34 @@ app.on('will-finish-launching', function () {
   // Protocol handler for osx
   app.on('open-url', function (event, url) {
     event.preventDefault()
-    deeplinkingUrl = url
-    logEverywhere('open-url# 2 ' + deeplinkingUrl)
+    deeplinkingUrl = url;
   })
 })
-// Log both at dev console and at running node console instance
-function logEverywhere(s) {
-  console.log(s)
-  if (mainWindow && mainWindow.webContents) {
-    mainWindow.webContents.executeJavaScript(`console.log("${s}")`)
+
+
+autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
+  const dialogOpts = {
+    type: 'info',
+    buttons: ['Restart', 'Later'],
+    title: 'Application Update',
+    message: process.platform === 'win32' ? releaseNotes : releaseName,
+    detail: 'A new version has been downloaded. Restart the application to apply the updates.'
   }
-}
+
+  dialog.showMessageBox(dialogOpts).then((returnValue) => {
+    if (returnValue.response === 0) autoUpdater.quitAndInstall()
+  })
+});
+
+
+autoUpdater.on('error', message => {
+  console.error('There was a problem updating the application');
+  console.error(message);
+});
+// Log both at dev console and at running node console instance
+// function logEverywhere(s) {
+//   console.log(s)
+//   if (mainWindow && mainWindow.webContents) {
+//     mainWindow.webContents.executeJavaScript(`console.log("${s}")`)
+//   }
+// }
